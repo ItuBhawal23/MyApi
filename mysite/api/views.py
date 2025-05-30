@@ -6,10 +6,17 @@ from rest_framework import generics, status, mixins, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.filters import SearchFilter, OrderingFilter
 
+from .pagination import CustomPagination
 from .serializers import BlogPostSerializer, EmployeeSerializer
 from blogposts.models import BlogPost
 from employees.models import Employee
+
+from blogs.models import Blog, Comment
+from blogs.serializers import BlogSerializer, CommentSerializer
+
+from employees.filters import EmployeeFilter
 
 # DRF features - request parsing, authentication, and response rendering.
 # Create your views here.
@@ -204,6 +211,7 @@ class BlogPostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # APIView = base class for all class-based views(get, post,put,delete) | custom API logic
 # This logic allows searching blog posts by `title` using a query parameter.
 # Without it: You’d always return all blog posts, even if the user wants to search by query.
+# get_queryset() is not used in APIView
 
 class BlogPostList(APIView):
 
@@ -218,7 +226,7 @@ class BlogPostList(APIView):
                 if(title):
                         # if title, filter the queryset based on the title
                         # it finds all blog posts where the title contains the search word.
-                        blog_post = BlogPost.objects.filter(title__icontains=title) # title__icontains (CASE SENSITIVE)- Django ORM lookup
+                        blog_post = BlogPost.objects.filter(title__icontains=title) # title__icontains (CASE IN-SENSITIVE)- Django ORM lookup
 
                 else:
                         # if no title is provided, return all blogs
@@ -283,3 +291,51 @@ class EmployeesViewSet(viewsets.ViewSet):
 class EmpViewSet(viewsets.ModelViewSet):
         queryset = Employee.objects.all()
         serializer_class = EmployeeSerializer
+        pagination_class = CustomPagination
+        # filterset_fields = ['designation'] #CASE-SENSITIVE #FE (usage)- fetch(`http://your-api/employees/?designation=${selectedDesignation}`)
+        filterset_class = EmployeeFilter #custom filter class
+
+# Blogs
+# GenericAPIView (get_queryset())
+
+# NoTE:  %20 represents a space character in URL encoding (also known as percent-encoding).
+# %3A → :
+# %2F → /
+# %40 → @    likewise etc
+
+class BlogsView(generics.ListCreateAPIView):
+        # queryset = Blog.objects.all()
+        serializer_class = BlogSerializer
+        pagination_class = CustomPagination
+
+        # get_queryset method is used to dynamically define or customize the queryset
+        # Used in	Class-based views (Django & DRF) [ not used in APIView ]
+        def get_queryset(self):
+                queryset = Blog.objects.all()
+                blog_title = self.request.query_params.get('blog_title')
+                if blog_title:
+                        queryset = queryset.filter(blog_title=blog_title)
+                return queryset
+
+
+# search filter
+class CommentsView(generics.ListCreateAPIView):
+        queryset = Comment.objects.all()
+        serializer_class = CommentSerializer
+        filter_backends = [SearchFilter, OrderingFilter] #[case in-sensitive]
+
+        # add more fields as per req [search keywords]
+        # #NOTE: Unsupported lookup 'icontains' for ForeignKey or join on the field not permitted.
+        # ^ looks for items that starts_withs the search keyword
+        search_fields =['^comment']
+        ordering_fields =['id', 'comment'] #orders list by asc, desc order
+
+class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
+        queryset = Blog.objects.all()
+        serializer_class = BlogSerializer
+        lookup_field = 'pk'
+
+class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+        queryset = Comment.objects.all()
+        serializer_class = CommentSerializer
+        lookup_field = 'pk'

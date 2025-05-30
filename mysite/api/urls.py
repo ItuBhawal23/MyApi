@@ -3,7 +3,6 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
-
 router = DefaultRouter()
 # router.register('emps', views.EmployeesViewSet, basename='emp')
 router.register('emps', views.EmpViewSet, basename='emp')
@@ -31,5 +30,12 @@ urlpatterns =[
     # path("blogposts/", views.BlogPostList.as_view(), name='blogpost_view_create'),
 
     # router view
-    path('', include(router.urls))
+    path('', include(router.urls)),
+
+    # Blogs
+    path('blogs/', views.BlogsView.as_view()),
+    path('comments/', views.CommentsView.as_view()),
+
+    path('blogs/<int:pk>', views.BlogDetailView.as_view()),
+    path('comments/<int:pk>', views.CommentDetailView.as_view())
 ]

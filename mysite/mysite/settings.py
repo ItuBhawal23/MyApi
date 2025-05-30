@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'api',
     'blogposts',
     'employees',
-    'rest_framework'
+    'rest_framework',
+    'django_filters',
+    'blogs'
 ]
 
 MIDDLEWARE = [
@@ -79,7 +81,7 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Blogpost',
+        'NAME': 'mysitedb',
         'USER': 'postgres',
         'PASSWORD': '1323',
         'HOST': 'localhost', # or '127.0.0.1'
@@ -128,3 +130,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Global Pagination
+# Pagination is only performed automatically if you're using the generic views or viewsets. for rest like (APIView) build custom pagination
+REST_FRAMEWORK = {
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 3, # no. of items in a page
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'SEARCH_PARAM': 'q',
+    'ORDERING_PARAM': 'order_by',
+}
